@@ -19,6 +19,8 @@ main.pdf
 *.fdb_latexmk
 *.fls
 
+*.idea
+
 # notebooks
 .ipynb_checkpoints
 Untitled*.ipynb
