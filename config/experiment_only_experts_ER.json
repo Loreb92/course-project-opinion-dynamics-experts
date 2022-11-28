@@ -1,0 +1,41 @@
+{
+  "network_params": [
+    "ER_10",
+    "ER_20",
+    "ER_50"
+  ],
+  "init_opinions_params": [
+    "uniform"
+  ],
+  "init_confidence_params": [
+    "const_0.05",
+    "const_0.1",
+    "const_0.15",
+    "const_0.2",
+    "const_0.25"
+  ],
+  "init_alpha_experts_params": [
+    "const_0.05",
+    "const_0.1",
+    "const_0.15",
+    "const_0.2",
+    "const_0.25"
+  ],
+  "tau": [
+    0,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9,
+    1
+  ],
+  "N": [
+    50,
+    100,
+    200
+  ],
+  "frac_experts": [
+    1
+  ]
+}

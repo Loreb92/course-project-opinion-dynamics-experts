@@ -1,15 +1,14 @@
 import networkx as nx
 
-def generate_ER_network(N, network_dict, seed=None):
+def generate_ER_network(N, average_degree, seed=None):
 
     # generate network
-    k_mean = network_dict['average_degree']
-    p = k_mean / (N - 1)
+    p = average_degree / (N - 1)
     G = nx.fast_gnp_random_graph(N, p=p, seed=seed)
 
     return G
 
-def generate_network(N, Ne, network_dict, seed=None):
+def generate_network(N, Ne, network_params, seed=None):
     """
     Generate the network.
     It is not necessary to add the fully connected network between the experts.
@@ -23,8 +22,10 @@ def generate_network(N, Ne, network_dict, seed=None):
     G : scipy.csr, the adjacency matrix
     """
 
-    if network_dict['network_model'] == 'ER':
-        G = generate_ER_network(N, network_dict, seed=seed)
+    if network_params.startswith('ER'):
+        _, average_degree = network_params.split("_")
+        average_degree = int(average_degree)
+        G = generate_ER_network(N, average_degree, seed=seed)
     else:
         raise NotImplementedError(f"The generation of {network_dict['network_model']} network model is not implemented.")
 
@@ -37,6 +38,6 @@ def generate_network(N, Ne, network_dict, seed=None):
     G = nx.relabel_nodes(G, mapping)
 
     # get adjacency matrix
-    A = nx.to_scipy_sparse_matrix(G, nodes=agents, format='csr')
+    A = nx.to_scipy_sparse_matrix(G, nodelist=agents, format='csr')
 
     return A
