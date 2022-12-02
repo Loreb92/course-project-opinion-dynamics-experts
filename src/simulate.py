@@ -79,9 +79,6 @@ def simulate(params):
     # initialize opinions and confidences
     Xa, Xe, eps_a, eps_e, alpha_e = initialize_model(Na, Ne, init_opinions_params, init_confidence_params, init_alpha_experts_params, seed=RNG)
 
-    if n_simul == 0:
-        metrics['opinions'].append(np.hstack([Xa, Xe]).tolist())
-
     n_iter = 0
     is_converged = False
     while (n_iter <= MAX_STEPS) and (not is_converged):
@@ -90,12 +87,10 @@ def simulate(params):
         Xa_new, Xe_new = update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A)
 
         # compute metrics and store
-        metrics['rmsd_truth_a'].append(rmsd_from_truth(Xa_new, tau))
-        metrics['rmsd_truth_e'].append(rmsd_from_truth(Xe_new, tau))
-        metrics['rmsd_truth_all'].append(rmsd_from_truth(np.hstack([Xa_new, Xe_new]), tau))
-
-        if n_simul  == 0:
-            metrics['opinions'].append(np.hstack([Xa_new, Xe_new]).tolist())
+        # don't store it every time, store just last one to save space
+        #metrics['rmsd_truth_a'].append(rmsd_from_truth(Xa_new, tau))
+        #metrics['rmsd_truth_e'].append(rmsd_from_truth(Xe_new, tau))
+        #metrics['rmsd_truth_all'].append(rmsd_from_truth(np.hstack([Xa_new, Xe_new]), tau))
 
         n_iter += 1
         is_converged = score_opinion_updates(np.hstack([Xa, Xe]), np.hstack([Xa_new, Xe_new]), conv_threshold=CONVERGENCE_THRESHOLD)
@@ -110,6 +105,10 @@ def simulate(params):
     metrics['converged'] = bool(is_converged)
     metrics['total_steps'] = n_iter
     metrics['time_elapsed'] = dt
+    metrics['rmsd_truth_a'] = rmsd_from_truth(Xa_new, tau)
+    metrics['rmsd_truth_e'] = rmsd_from_truth(Xe_new, tau)
+    metrics['rmsd_truth_all'] = rmsd_from_truth(np.hstack([Xa_new, Xe_new]), tau)
+    
 
     # store result
     q.put(('write_results', json.dumps(metrics)))

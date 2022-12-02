@@ -30,7 +30,7 @@ Untitled*.ipynb
 
 
 # /results
-
+results/*.json
 
 # /logs
 

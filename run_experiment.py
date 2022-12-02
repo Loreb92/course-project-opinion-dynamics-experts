@@ -28,7 +28,6 @@ def listener(q, file, logger):
             out_file_f.write(text + '\n')
             out_file_f.flush()
         elif action == 'kill':
-            print("KILL")
             break
         else:
             print(m[0])
@@ -43,11 +42,31 @@ def get_param_list(params):
 
     return permutations_dicts
 
+
+def run_simulation(params):
+    """ 
+    Run the simulation and handles eventual errors.
+    """
+    
+    q = params['q']
+    
+    try:
+        simulate(params)
+    except KeyboardInterrupt:
+        q.put(('log', "Stop for KeyboardInterrupt."))
+    except Exception as err:
+        import traceback
+        traceback = traceback.format_exception(err)
+        traceback = "".join(traceback)
+        params_show = {k:v for k, v in params.items() if k!='q'}
+        q.put(('log', f"Stop collection due to error in data collection. Error: {str(err)}\nParams with error: {json.dumps(params_show)}\n{traceback}"))
+
+
 def main(args, logger):
 
     # load params and make it to list of config params
     params = json.load(open(args.input_params_file, 'rt'))
-    param_list = get_param_list(params)[:10]
+    param_list = get_param_list(params)
     logger.write_log(f"Number of parameters to run: {len(param_list)}")
     param_list = [{**param, 'n_simul':n_simul} for param in param_list for n_simul in range(args.n_runs_per_param)]
     logger.write_log(f"Number of experiments to run: {len(param_list)}")
@@ -68,7 +87,8 @@ def main(args, logger):
     for params in param_list:
         params['q'] = q
         params['seed'] = seed
-        job = pool.apply_async(simulate, (params, ))
+        #job = pool.apply_async(simulate, (params, ))
+        job = pool.apply_async(run_simulation, (params, ))
         jobs.append(job)
 
         seed += 1
