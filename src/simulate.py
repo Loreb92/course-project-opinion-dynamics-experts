@@ -2,12 +2,47 @@ import json
 import time
 from collections import defaultdict
 import numpy as np
+from scipy import sparse
 from .utils_network import generate_network
 from .utils_model import initialize_model, score_opinion_updates, rmsd_from_truth
 
 MAX_STEPS = 300
 CONVERGENCE_THRESHOLD = 1e-3
 
+
+def update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A):
+    Na = Xa.shape[0]
+    X_all = np.hstack([Xa, Xe])
+    Xe = Xe[:, np.newaxis]
+    eps_all = np.hstack([eps_a, eps_e])[:, np.newaxis]
+    eps_e = eps_e[:, np.newaxis]
+
+    # TODO:
+    # -  is it possible to make it even faster?
+    # √ manage divisions by 0 (only Xa can encounter divisions by zero)
+
+    # compute if pairwise differences of opinions under the confidence
+    delta_opinions_thresholded = sparse.csr_matrix(np.abs(np.subtract.outer(X_all, X_all)) \
+                                                   <= eps_all).astype(int)
+
+    # update Xa
+    delta_opinions_thresholded_neigs = delta_opinions_thresholded.multiply(A)
+    Xa_new = np.asarray(delta_opinions_thresholded_neigs * X_all[:, np.newaxis]).flatten()
+    n_neigs = np.asarray(delta_opinions_thresholded_neigs.sum(axis=1)).flatten()
+    Xa_new = np.where(n_neigs == 0, X_all, Xa_new / n_neigs)
+    Xa_new = Xa_new[:Na]
+
+    # update Xe
+    delta_opinions_thresholded = delta_opinions_thresholded[Na:, Na:]
+    Xe_new = np.asarray(delta_opinions_thresholded * Xe / delta_opinions_thresholded.sum(axis=1))
+    Xe_new = np.where((np.abs(Xe_new - tau) <= eps_e),
+                      eps_e * tau + (1 - eps_e) * Xe_new,
+                      Xe_new).flatten()
+
+    return Xa_new, Xe_new
+
+
+""" Old version, improved runtime
 def update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A):
 
     Na = Xa.shape[0]
@@ -22,6 +57,9 @@ def update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A):
     for i, (Xa_i, eps_a_i) in enumerate(zip(Xa, eps_a)):
         others_within_bound = (np.abs(X_all - Xa_i) <= eps_a_i).astype(int)
         neighbors_within_bound = others_within_bound * A[i].A.flatten()
+        #neighbors_within_bound = np.zeros(A.shape[0])
+        #neighbors_within_bound =
+
         n_neigs = neighbors_within_bound.sum()
         xa_new = (neighbors_within_bound * X_all).sum() / n_neigs if n_neigs > 0 else Xa_i
         Xa_new.append(xa_new)
@@ -34,7 +72,7 @@ def update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A):
         Xe_new.append(xe_new)
 
     return np.array(Xa_new), np.array(Xe_new)
-
+"""
 
 #def simulate(N, frac_experts, network_dict, model_param_dict, tau, seed=None, store_history=False):
 def simulate(params):
@@ -74,17 +112,22 @@ def simulate(params):
     Na = N - Ne
 
     # generate syntetic network
+    t0_gen_net = time.time()
     A = generate_network(N, Ne, network_params, seed=RNG)
+    t_gen_net = time.time() - t0_gen_net
 
     # initialize opinions and confidences
     Xa, Xe, eps_a, eps_e, alpha_e = initialize_model(Na, Ne, init_opinions_params, init_confidence_params, init_alpha_experts_params, seed=RNG)
 
     n_iter = 0
     is_converged = False
+    time_updates = 0
     while (n_iter <= MAX_STEPS) and (not is_converged):
 
         # update opinions
+        t0_update = time.time()
         Xa_new, Xe_new = update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A)
+        time_updates += time.time() - t0_update
 
         # compute metrics and store
         # don't store it every time, store just last one to save space
@@ -108,6 +151,8 @@ def simulate(params):
     metrics['rmsd_truth_a'] = rmsd_from_truth(Xa_new, tau)
     metrics['rmsd_truth_e'] = rmsd_from_truth(Xe_new, tau)
     metrics['rmsd_truth_all'] = rmsd_from_truth(np.hstack([Xa_new, Xe_new]), tau)
+    metrics['t_gen_net'] = t_gen_net
+    metrics['time_updates'] = time_updates
     
 
     # store result
