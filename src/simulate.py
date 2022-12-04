@@ -16,6 +16,7 @@ def update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A):
     Xe = Xe[:, np.newaxis]
     eps_all = np.hstack([eps_a, eps_e])[:, np.newaxis]
     eps_e = eps_e[:, np.newaxis]
+    alpha_e = alpha_e[:, np.newaxis]
 
     # TODO:
     # -  is it possible to make it even faster?
@@ -35,8 +36,8 @@ def update_opinions(Xa, Xe, eps_a, eps_e, alpha_e, tau, A):
     # update Xe
     delta_opinions_thresholded = delta_opinions_thresholded[Na:, Na:]
     Xe_new = np.asarray(delta_opinions_thresholded * Xe / delta_opinions_thresholded.sum(axis=1))
-    Xe_new = np.where((np.abs(Xe_new - tau) <= eps_e),
-                      eps_e * tau + (1 - eps_e) * Xe_new,
+    Xe_new = np.where((np.abs(Xe_new - tau) <= eps_e), # check who is close to the truth
+                      alpha_e * tau + (1 - alpha_e) * Xe_new, 
                       Xe_new).flatten()
 
     return Xa_new, Xe_new
