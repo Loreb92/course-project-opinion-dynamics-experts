@@ -27,7 +27,9 @@ Untitled*.ipynb
 
 
 # /data
-
+data/copenhagen_network_study/*.csv
+data/copenhagen_network_study/*.README
+data/copenhagen_network_study/*.ipynb
 
 # /results
 results/*.json
