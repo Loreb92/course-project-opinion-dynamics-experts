@@ -1,0 +1,45 @@
+{
+  "network_params": [
+    "empirical_data/copenhagen_network_study/fb_friends.csv"
+  ],
+  "init_opinions_params": [
+    "uniform"
+  ],
+  "init_confidence_params": [
+    "const_0.1",
+    "const_0.2",
+    "const_0.3",
+    "const_0.4",
+    "const_0.5",
+    "const_0.6"
+  ],
+  "init_alpha_experts_params": [
+    "const_0.1",
+    "const_0.15",
+    "const_0.2",
+    "const_0.25",
+    "const_0.3",
+    "const_0.35",
+    "const_0.4",
+    "const_0.45",
+    "const_0.5",
+    "const_0.55",
+    "const_0.6",
+    "const_0.65",
+    "const_0.7",
+    "const_0.75"
+  ],
+  "tau": [
+    0.75,
+    0.9,
+    1
+  ],
+  "N": [
+    800
+  ],
+  "frac_experts": [
+    0.05,
+    0.1,
+    0.2
+  ]
+}
